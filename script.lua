@@ -4,6 +4,7 @@ local GUIRecarga = arma:WaitForChild("Recarga")
 local GUIRecargando = arma:WaitForChild("Recargando")
 local RemoteEvent = arma:WaitForChild("Activacion")
 local Player = arma.Parent.Parent
+local MouseEvent = arma:WaitForChild("Raton")
 local esta = true
 
 -- Propiedades arma
@@ -56,25 +57,6 @@ function Recarga()
 
 end
 
-function Equipado()
-	
-	equipado = true
-	
-	if EstaCargando == true  then
-		
-		GUIRecarga.Enabled = false
-		GUIRecargando.Enabled = true
-		
-	else
-		
-		GUIRecarga.Enabled = true
-		GUIRecargando.Enabled = false
-		
-	end
-	
-	Recarga()
-
-end
 
 function NoEquipado()
 	
@@ -99,7 +81,7 @@ function Dano(bala)
 			esta = false
 			humanoid:TakeDamage(damage)
 			game.Debris:AddItem(bala,0.1)
-			wait(1)
+			wait(0.5)
 			esta = true
 		
 		end
@@ -135,47 +117,71 @@ function NoBalas()
 
 end
 
-function Disparo()
+arma.Unequipped:Connect(NoEquipado)
+arma.Equipped:Connect(function()
 	
-	if Municion.Text >= "1" and EstaCargando == false then
-		
-		if CooldownDisparo == true then
-			
-			CooldownDisparo = false
-			local Character = Player.Character
-			local ManoDerecha = Character.RightHand
-			local bala = Instance.new("Part",workspace)
-			bala.Name = "Bala"
-			bala.Shape = Enum.PartType.Ball
-			bala.Anchored = false
-			bala.Color = Color3.new(1, 0, 0) 
-			bala.Size = Vector3.new(1.3,1.3,1.3)
-			bala.CanCollide = false
-			bala.Position = ManoDerecha.Position + Vector3.new(0,1,-1)
-			
-			Municion.Text -= 1
-			game.Debris:AddItem(bala,2)
-			Dano(bala)
-			
-			local BodyVelocity = Instance.new("BodyVelocity",bala)
-			BodyVelocity.Name = "Motor"
-			BodyVelocity.MaxForce = Vector3.new("inf","inf","inf")
-			BodyVelocity.Velocity = Player.Character.HumanoidRootPart.CFrame.LookVector * 100
+	local mouse = nil
+	
+	MouseEvent.OnServerEvent:Connect(function(personaje, mousePosition)
+		mouse = mousePosition
+	end)
+	
+	arma.Activated:Connect(function()
 
-			if Municion.Text == "0" then
+		if Municion.Text >= "1" and EstaCargando == false then
 
-				NoBalas()
+			if CooldownDisparo == true then
+
+				CooldownDisparo = false
+				local Character = Player.Character
+				local ManoDerecha = Character.RightHand
+				local bala = Instance.new("Part",workspace)
+
+				bala.Name = "Bala"
+				bala.Shape = Enum.PartType.Ball
+				bala.Anchored = false
+				bala.Color = Color3.new(1, 0, 0) 
+				bala.Size = Vector3.new(1.3,1.3,1.3)
+				bala.CanCollide = false
+				bala.Position = ManoDerecha.Position + Vector3.new(0,1,-1)
+
+				Municion.Text -= 1
+				game.Debris:AddItem(bala,2)
+				Dano(bala)
+
+				local BodyVelocity = Instance.new("BodyVelocity",bala)
+				BodyVelocity.Name = "Motor"
+				BodyVelocity.MaxForce = Vector3.new("inf","inf","inf")
+				BodyVelocity.Velocity = mouse * 100
+				if Municion.Text == "0" then
+
+					NoBalas()
+
+				end
+
+				wait(0.4)
+				CooldownDisparo = true
 
 			end
-			
-			wait(0.4)
-			CooldownDisparo = true
-			
+
 		end
-		
+
+	end)
+
+	equipado = true
+
+	if EstaCargando == true  then
+
+		GUIRecarga.Enabled = false
+		GUIRecargando.Enabled = true
+
+	else
+
+		GUIRecarga.Enabled = true
+		GUIRecargando.Enabled = false
+
 	end
-	
-end
-arma.Activated:Connect(Disparo)
-arma.Unequipped:Connect(NoEquipado)
-arma.Equipped:Connect(Equipado)
+
+	Recarga()
+
+end)
